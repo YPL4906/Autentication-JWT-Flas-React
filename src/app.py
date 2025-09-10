@@ -2,7 +2,7 @@
 This module takes care of starting the API Server, Loading the DB and Adding the endpoints
 """
 import os
-from flask import Flask, jsonify, send_from_directory
+from flask import Flask, jsonify, send_from_directory, request
 from flask_migrate import Migrate
 from flask_swagger import swagger
 from api.utils import APIException, generate_sitemap
@@ -40,11 +40,23 @@ setup_commands(app)
 # Add all endpoints from the API with a "api" prefix
 app.register_blueprint(api, url_prefix='/api')
 
-# ✅ Forzar CORS en todas las respuestas
+
+FRONTEND_URL = "https://reimagined-cod-wqpjg6jxqxv3946g-3000.app.github.dev"
+
+
+@app.before_request
+def handle_options_requests():
+    if request.method == "OPTIONS":
+        response = jsonify({"ok": True})
+        response.headers["Access-Control-Allow-Origin"] = FRONTEND_URL
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
+        response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
+        return response
+
+
 @app.after_request
 def add_cors_headers(response):
-    frontend_url = "https://reimagined-cod-wqpjg6jxqxv3946g-3000.app.github.dev"
-    response.headers["Access-Control-Allow-Origin"] = frontend_url
+    response.headers["Access-Control-Allow-Origin"] = FRONTEND_URL
     response.headers["Access-Control-Allow-Headers"] = "Content-Type,Authorization"
     response.headers["Access-Control-Allow-Methods"] = "GET,POST,OPTIONS"
     return response
@@ -74,4 +86,3 @@ def serve_any_other_file(path):
 if __name__ == '__main__':
     PORT = int(os.environ.get('PORT', 3001))
     app.run(host='0.0.0.0', port=PORT, debug=True)
-
